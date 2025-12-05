@@ -121,9 +121,7 @@ El archivo quedará en:
 /app/release/app-release.apk
 
 📸 6. Captura del APK Firmado y Archivo .jks
-Captura sugerida para el README (agregar imagen real en GitHub)
-![APK Firmado](images/apk_firmado.png)
-![Archivo JKS](images/jks.png)
+
 
 
 (Puedes agregar estas imágenes desde tu carpeta images/ dentro del repositorio.)
