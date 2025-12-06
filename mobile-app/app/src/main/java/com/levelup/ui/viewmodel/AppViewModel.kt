@@ -32,6 +32,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val dealsRepository = DealsRepository()
 
+
     private val _deals = MutableStateFlow<List<Deal>>(emptyList())
     val deals: StateFlow<List<Deal>> = _deals.asStateFlow()
 

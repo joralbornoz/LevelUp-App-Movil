@@ -19,6 +19,18 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    // 🔐 CONFIGURACIÓN DE FIRMA
+    signingConfigs {
+        create("release") {
+            val props = project
+
+            storeFile = file(props.property("RELEASE_STORE_FILE") as String)
+            storePassword = props.property("RELEASE_STORE_PASSWORD") as String
+            keyAlias = props.property("RELEASE_KEY_ALIAS") as String
+            keyPassword = props.property("RELEASE_KEY_PASSWORD") as String
+        }
+    }
+
 
     buildTypes {
         release {
@@ -27,6 +39,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 👉 usar la firma release
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -104,7 +118,21 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("app.cash.turbine:turbine:1.0.0")
 
+    // ---- TESTS UNITARIOS ----
 
+    // Necesario para ApplicationProvider (AndroidX Test)
+    testImplementation("androidx.test:core:1.5.0")
+
+    // Librerías de JUnit
+    testImplementation("junit:junit:4.13.2")
+
+    // Coroutines para test
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // MockK para mocks en Kotlin
+    testImplementation("io.mockk:mockk:1.13.9")
+
+    testImplementation("org.robolectric:robolectric:4.11.1")
 
 
 }

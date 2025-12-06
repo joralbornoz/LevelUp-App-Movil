@@ -1,156 +1,115 @@
-// src/test/java/com/levelup/viewmodel/AppViewModelCarritoTest.kt
 package com.levelup.viewmodel
 
 import android.app.Application
 import com.levelup.MainDispatcherRule
-import com.levelup.data.DatosUsuario
 import com.levelup.data.Productos
-import com.levelup.data.repository.*
 import com.levelup.ui.viewmodel.AppViewModel
-import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
-import io.mockk.every
 
 class AppViewModelCarritoTest {
 
     @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
+    val rule = MainDispatcherRule()
 
-    private val productoRepo = mockk<ProductoRepository>()
-    private val sucursalRepo = mockk<SucursalRepository>(relaxed = true)
-    private val usuarioRepo = mockk<UsuarioRepository>(relaxed = true)
-    private val compraRepo = mockk<CompraRepository>(relaxed = true)
-    private val dealsRepo = mockk<DealsRepository>(relaxed = true)
+    private val app: Application = mockk(relaxed = true)
 
-
-
-    // Mock de DatosUsuario para no tocar DataStore real
-    private val datos = mockk<DatosUsuario>(relaxed = true).apply {
-        // carrito vacío al inicio
-        every { carritoIds } returns flowOf("")
-        // email vacío (evita que intente sincronizar usuario en init)
-        every { emailUsuario } returns flowOf("")
-        every { nombreUsuario } returns flowOf("")
-        every { edadUsuario } returns flowOf("")
-        every { direccionUsuario } returns flowOf("")
-        every { preferenciasUsuario } returns flowOf("")
-        every { ordenesCsv } returns flowOf("")
-    }
 
     @Test
-    fun `agregarEnCarrito no permite superar el stock`() = runTest {
-        // Producto con stock 2
-        val prod = Productos(
-            codigo = "CTRL001",
-            nombre = "Control Inalámbrico",
-            precio = 20000,
-            descripcion = "Control gamer",
-            stock = 2
+    fun `total calcula la suma correcta del carrito`() {
+        val vm = AppViewModel(app)
+
+        // inyectamos productos
+        val fieldProd = vm.javaClass.getDeclaredField("_productos")
+        fieldProd.isAccessible = true
+        val productosFlow = fieldProd.get(vm) as MutableStateFlow<List<Productos>>
+        productosFlow.value = listOf(
+            Productos("P1","Prod 1",1000,"Desc",10),
+            Productos("P2","Prod 2",2000,"Desc",10)
         )
 
-        coEvery { productoRepo.obtenerProductos() } returns listOf(prod)
-
-        val vm = AppViewModel(
-            app = app,
-            productoRepository = productoRepo,
-            sucursalRepository = sucursalRepo,
-            usuarioRepository = usuarioRepo,
-            compraRepository = compraRepo,
-            dealsRepository = dealsRepo,
-            datosUsuario = datos
-        )
-        // Pre-cargamos productos desde API (rellena vm.productos)
-        vm.cargarProductosDesdeApi()
-        advanceUntilIdle()
-
-        // Agregamos 3 veces, pero solo debería aceptar 2 por stock
-        vm.agregarEnCarrito("CTRL001")
-        vm.agregarEnCarrito("CTRL001")
-        vm.agregarEnCarrito("CTRL001")
-
-        val carrito = vm.carrito.value
-        val mensaje = vm.mensajeCarrito.value
-
-        assertEquals(2, carrito.size)
-        assertEquals("No puedes agregar más. Stock disponible: 2", mensaje)
-    }
-
-    @Test
-    fun `total calcula correctamente el monto del carrito`() = runTest {
-        val prod1 = Productos(
-            codigo = "P1",
-            nombre = "Mouse",
-            precio = 10000,
-            descripcion = "",
-            stock = 10
-        )
-        val prod2 = Productos(
-            codigo = "P2",
-            nombre = "Teclado",
-            precio = 20000,
-            descripcion = "",
-            stock = 5
-        )
-
-        coEvery { productoRepo.obtenerProductos() } returns listOf(prod1, prod2)
-
-        val vm = AppViewModel(
-            app = app,
-            productoRepository = productoRepo,
-            sucursalRepository = sucursalRepo,
-            usuarioRepository = usuarioRepo,
-            compraRepository = compraRepo,
-            dealsRepository = dealsRepo,
-            datosUsuario = datos
-        )
-
-        // NO LLAMAR cargarProductosDesdeApi() porque llama a Retrofit real
-        // El ViewModel usará DataProductos automáticamente
-
-        vm.agregarEnCarrito("MOUSE1")
-        vm.agregarEnCarrito("TECLADO1")
+        // inyectamos carrito directamente, SIN llamar a agregarEnCarrito()
+        val fieldCarrito = vm.javaClass.getDeclaredField("_carrito")
+        fieldCarrito.isAccessible = true
+        val carritoFlow = fieldCarrito.get(vm) as MutableStateFlow<List<String>>
+        carritoFlow.value = listOf("P1","P2","P2") // 1×1000 + 2×2000 = 5000
 
         val total = vm.total()
-        assertEquals(35000, total)
+
+        assertEquals(5000, total)
     }
 
+
     @Test
-    fun `limpiarCarrito deja el carrito vacío`() = runTest {
-        val prod = Productos(
-            codigo = "P1",
-            nombre = "Mouse",
-            precio = 10000,
-            descripcion = "",
-            stock = 10
-        )
+    fun `limpiarCarrito deja el carrito vacio`() = runTest {
+        val vm = AppViewModel(app)
 
-        coEvery { productoRepo.obtenerProductos() } returns listOf(prod)
+        val producto = Productos("PS5", "Play 5", 500000, "Consola", 5)
 
-        val vm = AppViewModel(
-            app = app,
-            productoRepository = productoRepo,
-            sucursalRepository = sucursalRepo,
-            usuarioRepository = usuarioRepo,
-            compraRepository = compraRepo,
-            dealsRepository = dealsRepo,
-            datosUsuario = datos
-        )
+        val field = vm.javaClass.getDeclaredField("_productos")
+        field.isAccessible = true
+        val productosFlow = field.get(vm) as MutableStateFlow<List<Productos>>
+        productosFlow.value = listOf(producto)
 
-        vm.cargarProductosDesdeApi()
-        advanceUntilIdle()
+        vm.agregarEnCarrito("PS5")
+        assertEquals(1, vm.carrito.value.size)
 
-        vm.agregarEnCarrito("P1")
-        vm.agregarEnCarrito("P1")
-
-        // ahora limpiamos
         vm.limpiarCarrito()
 
         assertEquals(0, vm.carrito.value.size)
     }
+    @Test
+    fun `agregarEnCarrito agrega un producto al carrito`() {
+        val app = mockk<Application>(relaxed = true)
+        val vm = AppViewModel(app)
+
+        // --- Inyectar productos en el ViewModel ---
+        val productosField = vm.javaClass.getDeclaredField("_productos")
+        productosField.isAccessible = true
+        val productosFlow = productosField.get(vm) as MutableStateFlow<List<Productos>>
+
+        productosFlow.value = listOf(
+            Productos("P1", "Producto 1", 1000, "desc", 5)
+        )
+
+        // --- Ejecutar lógica ---
+        vm.agregarEnCarrito("P1")
+
+        // --- Validación ---
+        assertEquals(1, vm.carrito.value.size)
+        assertEquals("P1", vm.carrito.value.first())
+    }
+    @Test
+    fun `agregarEnCarrito devuelve error si stock no alcanza`() {
+        val app = mockk<Application>(relaxed = true)
+        val vm = AppViewModel(app)
+
+        val productosField = vm.javaClass.getDeclaredField("_productos")
+        productosField.isAccessible = true
+        val flow = productosField.get(vm) as MutableStateFlow<List<Productos>>
+
+        flow.value = listOf(
+            Productos("P1", "Producto 1", 1000, "desc", 1) // stock = 1
+        )
+
+        // Primera vez entra
+        vm.agregarEnCarrito("P1")
+
+        // Segunda vez debe fallar
+        vm.agregarEnCarrito("P1")
+
+        val mensajeField = vm.javaClass.getDeclaredField("_mensajeCarrito")
+        mensajeField.isAccessible = true
+        val msgFlow = mensajeField.get(vm) as MutableStateFlow<String?>
+
+        assertEquals("No puedes agregar más. Stock disponible: 1", msgFlow.value)
+    }
+
+
+
+
 }

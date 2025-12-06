@@ -12,3 +12,4 @@ interface CheapSharkApi {
         @Query("sortBy") sortBy: String = "DealRating"
     ): List<GameDealDto>
 }
+
