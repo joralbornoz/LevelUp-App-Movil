@@ -6,4 +6,7 @@ interface IUsuarioRepository {
     suspend fun obtenerUsuarioPorEmail(email: String): Usuario?
     suspend fun crearUsuario(usuario: Usuario): Usuario
     suspend fun actualizarUsuario(id: Long, usuario: Usuario): Usuario
+    suspend fun obtenerUsuarios(): List<Usuario>
+    suspend fun eliminarUsuario(id: Long)
+
 }

@@ -1,5 +1,6 @@
 package com.levelup.ui.screens
 
+import android.util.Patterns
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -96,7 +97,7 @@ fun LoginScreen(onBack: () -> Unit, onLoginSuccess: () -> Unit) {
                     errorLocal = when {
                         !modoLogin && nombre.isBlank() ->
                             "Nombre requerido para registrarse"
-                        email.isBlank() || !email.contains("@") ->
+                        email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
                             "Email inválido"
                         pass.length < 6 ->
                             "La contraseña debe tener al menos 6 caracteres"

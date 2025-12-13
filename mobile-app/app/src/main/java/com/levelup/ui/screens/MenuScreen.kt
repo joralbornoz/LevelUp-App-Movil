@@ -23,6 +23,7 @@ fun MenuScreen(onNavigate: (String) -> Unit) {
     val vm: AppViewModel = viewModel(LocalContext.current as ComponentActivity)
     val name by vm.nombreUsuario.collectAsState()
     val email by vm.emailUsuario.collectAsState()
+    val usuarioBackend by vm.usuarioBackend.collectAsState()
 
     Scaffold(
         topBar = {
@@ -62,13 +63,29 @@ fun MenuScreen(onNavigate: (String) -> Unit) {
                     )
                 }
             }
+            // 👑 SOLO ADMIN
+            if (usuarioBackend?.rol == "ADMIN") {
+                BotonMenu("Administración de Usuarios", Icons.Filled.AdminPanelSettings) {
+                    onNavigate(NavRoutes.Admin)
+                }
+            }
+            else {
 
-            BotonMenu("Productos / Tienda", Icons.Filled.Store) { onNavigate(NavRoutes.Productos) }
-            BotonMenu("Carrito", Icons.Filled.ShoppingCart) { onNavigate(NavRoutes.Carrito) }
-            BotonMenu("Perfil", Icons.Filled.Person) { onNavigate(NavRoutes.Perfil) }
-            BotonMenu("Sucursales", Icons.Filled.LocationOn) { onNavigate(NavRoutes.Sucursales) }
-            BotonMenu("Ofertas Externas", Icons.Filled.AttachMoney) { onNavigate(NavRoutes.OfertasExternas) }
-
+                BotonMenu(
+                    "Productos / Tienda",
+                    Icons.Filled.Store
+                ) { onNavigate(NavRoutes.Productos) }
+                BotonMenu("Carrito", Icons.Filled.ShoppingCart) { onNavigate(NavRoutes.Carrito) }
+                BotonMenu("Perfil", Icons.Filled.Person) { onNavigate(NavRoutes.Perfil) }
+                BotonMenu(
+                    "Sucursales",
+                    Icons.Filled.LocationOn
+                ) { onNavigate(NavRoutes.Sucursales) }
+                BotonMenu(
+                    "Ofertas Externas",
+                    Icons.Filled.AttachMoney
+                ) { onNavigate(NavRoutes.OfertasExternas) }
+            }
         }
     }
 }

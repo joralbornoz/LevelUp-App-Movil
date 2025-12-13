@@ -1,20 +1,20 @@
 package com.levelup.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.collectAsState
+import androidx.navigation.compose.*
 import com.levelup.ui.screens.*
 import com.levelup.ui.viewmodel.AppViewModel
 
 @Composable
 fun AppNav() {
     val nav = rememberNavController()
-    val vm: AppViewModel = viewModel()
+    val vm: AppViewModel = viewModel(LocalContext.current as ComponentActivity)
+
     val registrado by vm.estaLogueado.collectAsState(initial = false)
+    val usuarioBackend by vm.usuarioBackend.collectAsState()
 
     val inicio = if (registrado) NavRoutes.Menu else NavRoutes.Login
 
@@ -54,9 +54,21 @@ fun AppNav() {
         composable(NavRoutes.Sucursales) {
             SucursalesScreen(onBack = { nav.popBackStack() })
         }
+
         composable(NavRoutes.OfertasExternas) {
             OfertasExternasScreen(onBack = { nav.popBackStack() })
         }
 
+        // 🔐 RUTA ADMIN PROTEGIDA
+        composable(NavRoutes.Admin) {
+            if (usuarioBackend?.rol == "ADMIN") {
+                AdminScreen(onBack = { nav.popBackStack() })
+            } else {
+                // Si alguien intenta entrar sin ser admin
+                LaunchedEffect(Unit) {
+                    nav.popBackStack()
+                }
+            }
+        }
     }
 }

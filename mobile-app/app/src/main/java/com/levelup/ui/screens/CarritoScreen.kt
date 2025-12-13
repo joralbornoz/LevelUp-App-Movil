@@ -17,14 +17,16 @@ import androidx.compose.ui.platform.LocalContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarritoScreen(onBack: () -> Unit) {
+
+
     val vm: AppViewModel = viewModel(LocalContext.current as ComponentActivity)
-
-
+    val compraExitosa by vm.compraExitosa.collectAsState()
     val codigosCarrito by vm.carrito.collectAsState()
     val productosApi by vm.productos.collectAsState()
     val mensajeCarrito by vm.mensajeCarrito.collectAsState()
     val cargandoProductos by vm.cargandoProductos.collectAsState()
     val errorProductos by vm.errorProductos.collectAsState()
+
 
 
     LaunchedEffect(Unit) {
@@ -124,7 +126,6 @@ fun CarritoScreen(onBack: () -> Unit) {
                         onClick = {
                             vm.pagarYGuardarOrden {
 
-                                onBack()
                             }
                         },
                         enabled = codigosCarrito.isNotEmpty(),
@@ -136,4 +137,27 @@ fun CarritoScreen(onBack: () -> Unit) {
             }
         }
     }
+
+    // Mostrar el popup cuando la compra se haya completado
+    if (compraExitosa) {
+        AlertDialog(
+            onDismissRequest = {
+                vm.limpiarCompraExitosa() // 👈 IMPORTANTE
+            },
+            title = { Text("Compra realizada") },
+            text = { Text("¡Tu compra se realizó correctamente!") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        vm.limpiarCompraExitosa() // 👈 AQUÍ TAMBIÉN
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
 }
+
+
+

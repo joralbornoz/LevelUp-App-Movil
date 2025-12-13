@@ -33,8 +33,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val dealsRepository = DealsRepository()
 
 
+    private val _adminUsuarios = MutableStateFlow<List<Usuario>>(emptyList())
+    val adminUsuarios: StateFlow<List<Usuario>> = _adminUsuarios.asStateFlow()
+
+    private val _adminError = MutableStateFlow<String?>(null)
+    val adminError: StateFlow<String?> = _adminError.asStateFlow()
+
+    private val _adminCargando = MutableStateFlow(false)
+    val adminCargando: StateFlow<Boolean> = _adminCargando.asStateFlow()
+
     private val _deals = MutableStateFlow<List<Deal>>(emptyList())
     val deals: StateFlow<List<Deal>> = _deals.asStateFlow()
+
+    private val _compraExitosa = MutableStateFlow(false)
+    val compraExitosa: StateFlow<Boolean> = _compraExitosa.asStateFlow()
 
     // ----------------- COMPRA -----------------
     private val _comprasUsuario = MutableStateFlow<List<Compra>>(emptyList())
@@ -428,6 +440,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             _productos.value = lista
         } catch (_: Exception) {}
 
+        _compraExitosa.value = true
         onFinish?.invoke()
     }
 
@@ -464,6 +477,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _errorOfertasExternas = MutableStateFlow<String?>(null)
     val errorOfertasExternas: StateFlow<String?> = _errorOfertasExternas.asStateFlow()
 
+    fun limpiarCompraExitosa() {
+        _compraExitosa.value = false
+    }
+
     fun cargarOfertasExternas() {
         viewModelScope.launch {
             try {
@@ -477,6 +494,44 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+    fun cargarUsuariosAdmin() {
+        viewModelScope.launch {
+            try {
+                _adminCargando.value = true
+                _adminError.value = null
+                _adminUsuarios.value = usuarioRepository.obtenerUsuarios()
+            } catch (e: Exception) {
+                _adminError.value = "Error cargando usuarios: ${e.message}"
+            } finally {
+                _adminCargando.value = false
+            }
+        }
+    }
+
+    fun eliminarUsuarioAdmin(id: Long) {
+        viewModelScope.launch {
+            try {
+                _adminError.value = null
+                usuarioRepository.eliminarUsuario(id)
+                _adminUsuarios.value = _adminUsuarios.value.filterNot { it.id == id }
+            } catch (e: Exception) {
+                _adminError.value = "Error eliminando usuario: ${e.message}"
+            }
+        }
+    }
+
+    fun actualizarUsuarioAdmin(usuarioEditado: Usuario) {
+        viewModelScope.launch {
+            try {
+                _adminError.value = null
+                val actualizado = usuarioRepository.actualizarUsuario(usuarioEditado.id, usuarioEditado)
+                _adminUsuarios.value = _adminUsuarios.value.map { if (it.id == actualizado.id) actualizado else it }
+            } catch (e: Exception) {
+                _adminError.value = "Error actualizando usuario: ${e.message}"
+            }
+        }
+    }
+
 
 
 

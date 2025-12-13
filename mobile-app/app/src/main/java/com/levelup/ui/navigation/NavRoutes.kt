@@ -9,4 +9,6 @@ object NavRoutes {
     const val Sucursales = "sucursales"
 
     const val OfertasExternas = "ofertas_externas"
+
+    const val Admin = "admin"
 }

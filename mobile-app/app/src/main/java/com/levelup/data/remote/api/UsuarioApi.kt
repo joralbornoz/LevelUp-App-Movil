@@ -1,12 +1,15 @@
 package com.levelup.data.remote.api
 
+
+
 import com.levelup.data.remote.dto.UsuarioDto
 import retrofit2.http.*
 
 interface UsuarioApi {
 
+    // 👑 ADMIN: listar usuarios
     @GET("api/usuarios")
-    suspend fun getUsuarios(): List<UsuarioDto>
+    suspend fun obtenerUsuarios(): List<UsuarioDto>
 
     @GET("api/usuarios/{id}")
     suspend fun getUsuarioPorId(@Path("id") id: Long): UsuarioDto
@@ -23,4 +26,7 @@ interface UsuarioApi {
         @Body usuario: UsuarioDto
     ): UsuarioDto
 
+    // 👑 ADMIN: eliminar usuario
+    @DELETE("api/usuarios/{id}")
+    suspend fun eliminarUsuario(@Path("id") id: Long)
 }

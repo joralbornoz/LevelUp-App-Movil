@@ -51,4 +51,14 @@ class UsuarioRepository {
         val actualizado = api.actualizarUsuario(id, dto)
         return mapDtoToUi(actualizado)
     }
+    // ✅ ADMIN: listar usuarios
+    suspend fun obtenerUsuarios(): List<Usuario> {
+        return api.obtenerUsuarios().map { mapDtoToUi(it) }
+    }
+
+    // ✅ ADMIN: eliminar usuario (opcional, si tendrás botón eliminar)
+    suspend fun eliminarUsuario(id: Long) {
+        api.eliminarUsuario(id)
+    }
+
 }
