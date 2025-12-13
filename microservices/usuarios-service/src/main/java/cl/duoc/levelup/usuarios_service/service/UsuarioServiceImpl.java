@@ -4,10 +4,13 @@ import cl.duoc.levelup.usuarios_service.dto.UsuarioDTO;
 import cl.duoc.levelup.usuarios_service.dto.UsuarioMapper;
 import cl.duoc.levelup.usuarios_service.model.Usuario;
 import cl.duoc.levelup.usuarios_service.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import cl.duoc.levelup.usuarios_service.repository.CompraRepository;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,9 +19,14 @@ import java.util.stream.Collectors;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository repo;
+    private final CompraRepository compraRepository;
 
-    public UsuarioServiceImpl(UsuarioRepository repo) {
+    public UsuarioServiceImpl(
+            UsuarioRepository repo,
+            CompraRepository compraRepository
+    ) {
         this.repo = repo;
+        this.compraRepository = compraRepository;
     }
 
     @Override
@@ -85,7 +93,27 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
+        Usuario usuario = repo.findById(id)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "USUARIO_NO_EXISTE")
+                );
+
+        // Comprobamos si el usuario es un ADMIN
+        if ("ADMIN".equalsIgnoreCase(usuario.getRol())) {
+            // Cambio aquí: personalizado el mensaje
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No se puede eliminar al administrador"
+            );
+        }
+
+        // Eliminar compras del usuario
+        compraRepository.deleteByUsuarioEmail(usuario.getEmail());
+
+        // Eliminar usuario
         repo.deleteById(id);
     }
 }
+
